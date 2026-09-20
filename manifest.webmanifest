@@ -1,0 +1,11 @@
+{
+  "name": "NC 2027 Field Performance System",
+  "short_name": "NC 2027",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F7FA",
+  "theme_color": "#087BF5",
+  "icons": [
+    {"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

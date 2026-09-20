@@ -1,0 +1,7 @@
+{
+  "name": "nc2027-pitch-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NC 2027 pitch demonstration: Vercel frontend + Vercel proxy + Google Apps Script backend",
+  "engines": { "node": ">=20" }
+}
