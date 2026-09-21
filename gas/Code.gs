@@ -678,7 +678,7 @@ function seedReferenceData_(ss) {
   ]);
 
   seedIfEmpty_(ss, 'Users', [
-    {user_id:'USR-NC001',employee_code:'NC001',full_name:'Mimo Rahma',role_id:'NC',phone:'081200000001',email:'mimo@example.com',status:'ACTIVE',pin:'1234'},
+    {user_id:'USR-NC001',employee_code:'NC001',full_name:'Mas Alfa',role_id:'NC',phone:'081200000001',email:'mimo@example.com',status:'ACTIVE',pin:'1234'},
     {user_id:'USR-NC002',employee_code:'NC002',full_name:'Sari Putri',role_id:'NC',phone:'081200000002',email:'sari@example.com',status:'ACTIVE',pin:'1234'},
     {user_id:'USR-NC003',employee_code:'NC003',full_name:'Dinda Ayu',role_id:'NC',phone:'081200000003',email:'dinda@example.com',status:'ACTIVE',pin:'1234'},
     {user_id:'USR-NC004',employee_code:'NC004',full_name:'Rani Dewi',role_id:'NC',phone:'081200000004',email:'rani@example.com',status:'ACTIVE',pin:'1234'},
