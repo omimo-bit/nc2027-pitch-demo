@@ -1,4 +1,4 @@
-const CACHE = 'nc2027-v6-static';
+const CACHE = 'nc2027-v7-static';
 const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/ai-vision.js', '/manifest.webmanifest'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
