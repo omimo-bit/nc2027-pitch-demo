@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b5cab" />
+  <meta name="description" content="NC 2027 Field Performance Management System - Pitch Demo" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/styles.css" />
+  <title>NC 2027 · Field Performance Management System</title>
+</head>
+<body>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <section id="loginScreen" class="login-screen">
+    <div class="login-grid">
+      <aside class="login-visual">
+        <div class="brand-mark">NC 2027</div>
+        <div class="login-copy">
+          <span class="eyebrow light">FIELD PERFORMANCE MANAGEMENT SYSTEM</span>
+          <h1>Field execution.<br>Reliable data.<br>Faster decisions.</h1>
+          <p>Demo operasional untuk field capture, visual audit, data validation, KPI monitoring, dan management reporting.</p>
+          <div class="flow-line"><span>Field</span><i></i><span>Validation</span><i></i><span>Analytics</span><i></i><span>Action</span></div>
+        </div>
+        <small>Vercel frontend · Google Apps Script backend · Google Sheets demo database</small>
+      </aside>
+
+      <main class="login-main">
+        <form id="loginForm" class="login-card" autocomplete="on">
+          <div class="login-brandline"><strong>NC 2027</strong><span>Field Performance Management System</span></div>
+          <div>
+            <span class="eyebrow">WELCOME</span>
+            <h2>Masuk ke sistem</h2>
+            <p class="muted">Gunakan akun demo atau Employee ID yang tersedia.</p>
+          </div>
+          <label class="field"><span>Employee ID</span><input id="employeeCode" autocomplete="username" value="NC001" required /></label>
+          <label class="field"><span>PIN</span><div class="input-with-action"><input id="pin" type="password" inputmode="numeric" autocomplete="current-password" value="1234" required /><button id="togglePin" type="button" class="link-button">Show</button></div></label>
+          <label class="check-row"><input id="rememberMe" type="checkbox" checked><span>Remember me</span></label>
+          <button class="btn primary full" type="submit">Login</button>
+          <div class="demo-label">Demo accounts</div>
+          <div class="demo-grid">
+            <button type="button" data-code="NC001"><span>Nutrition Consultant</span><b>NC001</b></button>
+            <button type="button" data-code="DE001"><span>Data Entry</span><b>DE001</b></button>
+            <button type="button" data-code="DA001"><span>Data Analyst</span><b>DA001</b></button>
+            <button type="button" data-code="PM001"><span>Project Manager</span><b>PM001</b></button>
+          </div>
+          <p class="tiny muted">PIN seluruh akun demo: 1234</p>
+        </form>
+      </main>
+    </div>
+  </section>
+
+  <div id="appShell" class="app-shell hidden">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand"><strong>NC 2027</strong><span>Field Intelligence</span></div>
+      <nav id="navMenu" class="side-nav"></nav>
+      <div class="side-foot">
+        <div class="connection-row"><span id="connectionDot" class="status-dot"></span><span id="connectionText">Checking</span></div>
+        <small id="networkDetail">Network status loading</small>
+        <small>Pitch Demo v6.0</small>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="mobileMenuBtn" class="text-button mobile-menu" type="button">Menu</button>
+          <div><span id="pageEyebrow" class="eyebrow">TODAY</span><h2 id="pageTitle">Dashboard</h2></div>
+        </div>
+        <div class="topbar-right">
+          <div id="networkPill" class="network-pill">Checking network</div>
+          <div id="offlineBadge" class="sync-pill hidden">0 pending sync</div>
+          <div class="user-summary"><b id="userName">User</b><span id="userRole">Role</span></div>
+          <button id="logoutBtn" class="text-button" type="button">Sign out</button>
+        </div>
+      </header>
+      <div id="desktopTabs" class="desktop-tabs hidden"></div>
+      <div id="pageContent" class="page-content"></div>
+    </main>
+    <nav id="mobileBottomNav" class="mobile-bottom-nav hidden"></nav>
+  </div>
+
+  <div id="modalRoot"></div>
+  <script src="/ai-vision.js" defer></script>
+  <script src="/app.js" defer></script>
+</body>
+</html>
