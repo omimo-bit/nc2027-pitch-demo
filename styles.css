@@ -37,3 +37,16 @@ body{min-height:100vh}.toast{position:fixed;z-index:1000;right:20px;top:20px;max
 .evidence-empty{min-height:220px;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;background:#f5f7fa;border:1px dashed #aebdca;border-radius:12px;color:var(--muted);font-size:11px}
 .evidence-compare{margin-top:16px}
 @media(max-width:760px){.evidence-grid{grid-template-columns:1fr}.evidence-image{max-height:56vh}.evidence-modal{padding:14px}}
+
+/* V7: Data Entry Visual Review Workspace */
+.metric-compare.five{grid-template-columns:repeat(5,1fr)}
+.verified-source{margin-top:4px;font-size:8px;font-weight:900;letter-spacing:.08em;color:#4c6f63;text-transform:uppercase}
+.review-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:12px}.review-title-row h3{margin:4px 0 3px}.review-title-row p{margin:0;color:var(--muted);font-size:10px}
+.review-comparison-card{margin-top:14px;box-shadow:none}
+.verified-result-card{margin-top:14px;border:1px solid #bfe1d2;background:#f2faf6;border-radius:14px;padding:15px}.verified-result-card span{display:block;font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#56796c}.verified-result-card strong{display:block;font-size:28px;margin:4px 0;color:#173e32}.verified-result-card p,.verified-result-card small{margin:0;color:#60786f;font-size:10px}
+.review-decision-panel{margin-top:14px;border-top:1px solid var(--line);padding-top:16px}.review-decision-panel h3{margin:0 0 4px}.review-decision-panel>div>p{margin-top:0}
+.override-grid{display:grid;grid-template-columns:1fr 1fr .8fr;gap:10px;margin-top:12px}.override-grid .calc-field{display:flex;flex-direction:column;justify-content:center}.override-grid .calc-field b{font-size:21px}
+.review-action-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.review-action-grid .btn{min-height:44px}
+.review-workspace-modal{max-height:92vh}
+@media(max-width:980px){.metric-compare.five{grid-template-columns:repeat(3,1fr)}.review-action-grid{grid-template-columns:1fr 1fr}.override-grid{grid-template-columns:1fr 1fr}.override-grid .calc-field{grid-column:1/-1}}
+@media(max-width:620px){.metric-compare.five{grid-template-columns:1fr 1fr}.review-title-row{display:block}.review-title-row .status-badge{display:inline-block;margin-top:8px}.override-grid,.review-action-grid{grid-template-columns:1fr}.override-grid .calc-field{grid-column:auto}.review-workspace-modal{padding:14px}.verified-result-card strong{font-size:24px}}
