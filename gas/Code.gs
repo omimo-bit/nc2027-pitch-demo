@@ -110,7 +110,7 @@ function doPost(e) {
     }
 
     var action = String(payload.action || 'health');
-    var writeActions = {submitStock:true, submitOfftake:true, submitVisualAudit:true, updateValidation:true};
+    var writeActions = {submitStock:true, submitOfftake:true, submitVisualAudit:true, reviewVisualAudit:true, updateValidation:true};
 
     // Read-only actions must never wait behind a sheet write lock. This keeps
     // login, bootstrap and health responsive during a pitch or crowded field use.
@@ -151,6 +151,7 @@ function handleAction_(p) {
   if (action === 'submitOfftake') return submitOfftake_(ss, p);
   if (action === 'submitVisualAudit') return submitVisualAudit_(ss, p);
   if (action === 'getVisualAuditEvidence') return getVisualAuditEvidence_(ss, p);
+  if (action === 'reviewVisualAudit') return reviewVisualAudit_(ss, p);
   if (action === 'listQueue') return listQueue_(ss, p);
   if (action === 'updateValidation') return updateValidation_(ss, p);
 
@@ -512,13 +513,88 @@ function getVisualAuditEvidence_(ss, p) {
   var snap = findVisualAuditSnapshot_(ss, p.submissionId);
   if (!snap) return {ok:false, error:'EVIDENCE_NOT_FOUND', message:'Snapshot visual audit tidak ditemukan.'};
   var ev = snap.evidence || {};
+  var review = findLatestVisualReview_(ss, p.submissionId);
   return {
     ok:true,
     submissionId:String(p.submissionId),
     originalDataUrl:ev.originalFileId ? fileToDataUrl_(ev.originalFileId) : '',
     annotatedDataUrl:ev.annotatedFileId ? fileToDataUrl_(ev.annotatedFileId) : '',
-    audit:{manual:snap.manual||{}, ai:snap.ai||{}, comparison:snap.comparison||{}, evidence:{available:Boolean(ev.originalFileId||ev.annotatedFileId)}, changedAt:String(submission.submitted_at||'')}
+    audit:{manual:snap.manual||{}, ai:snap.ai||{}, comparison:snap.comparison||{}, verified:review ? (review.verified||null) : null, review:review ? (review.review||null) : null, evidence:{available:Boolean(ev.originalFileId||ev.annotatedFileId)}, changedAt:String(submission.submitted_at||'')}
   };
+}
+
+function findLatestVisualReview_(ss, submissionId) {
+  var rows = getRows_(ss, 'SubmissionVersions').filter(function(v){
+    return String(v.submission_id) === String(submissionId) && String(v.reason) === 'VISUAL_AUDIT_REVIEW';
+  });
+  if (!rows.length) return null;
+  rows.sort(function(a,b){ return Number(b.version||0) - Number(a.version||0); });
+  try { return JSON.parse(String(rows[0].payload_snapshot || '{}')); } catch (e) { return null; }
+}
+
+function nextSubmissionVersion_(ss, submissionId) {
+  var rows = getRows_(ss, 'SubmissionVersions').filter(function(v){ return String(v.submission_id) === String(submissionId); });
+  var max = 0;
+  rows.forEach(function(v){ max = Math.max(max, Number(v.version||0)); });
+  return max + 1;
+}
+
+function reviewVisualAudit_(ss, p) {
+  requireFields_(p, ['submissionId','userId','decision']);
+  var user = findOne_(ss, 'Users', 'user_id', String(p.userId));
+  var submission = findOne_(ss, 'Submissions', 'submission_id', String(p.submissionId));
+  if (!user || !submission) return {ok:false, error:'NOT_FOUND', message:'Reviewer atau submission tidak ditemukan.'};
+  var role = String(user.role_id || '');
+  if (role !== 'DATA_ENTRY' && role !== 'PROJECT_MANAGER' && role !== 'SUPER_ADMIN') {
+    return {ok:false, error:'FORBIDDEN', message:'Hanya Data Entry / Project Manager yang dapat menetapkan Verified Result.'};
+  }
+  if (String(submission.task_id) !== 'TASK-SOS') return {ok:false, error:'INVALID_TASK', message:'Submission ini bukan Visual Audit SOS.'};
+  var snap = findVisualAuditSnapshot_(ss, p.submissionId);
+  if (!snap) return {ok:false, error:'VISUAL_AUDIT_NOT_FOUND', message:'Snapshot Manual + AI tidak ditemukan.'};
+
+  var decision = String(p.decision || '').toUpperCase();
+  var manual = snap.manual || {}, ai = snap.ai || {}, verified = null;
+  if (decision === 'ACCEPT_AI') {
+    verified = {facing:Number(ai.facing||0), total:Number(ai.total||0), sos:Number(ai.sos||0), source:'AI'};
+  } else if (decision === 'USE_MANUAL') {
+    verified = {facing:Number(manual.facing||0), total:Number(manual.total||0), sos:Number(manual.sos||0), source:'MANUAL'};
+  } else if (decision === 'OVERRIDE') {
+    var facing = Number(p.overrideFacing), total = Number(p.overrideTotal);
+    if (!isFinite(facing) || facing < 0 || !isFinite(total) || total <= 0 || facing > total) {
+      return {ok:false, error:'INVALID_OVERRIDE', message:'Override facing/total tidak valid. Facing harus 0..total dan total > 0.'};
+    }
+    verified = {facing:facing, total:total, sos:Math.round((facing/total*100)*10)/10, source:'OVERRIDE'};
+  } else {
+    return {ok:false, error:'INVALID_DECISION', message:'Gunakan ACCEPT_AI, USE_MANUAL, atau OVERRIDE.'};
+  }
+
+  var now = new Date().toISOString();
+  var version = nextSubmissionVersion_(ss, submission.submission_id);
+  var review = {
+    decision:decision,
+    reason:String(p.reason || 'Visual evidence reviewed by Data Entry.'),
+    reviewedBy:user.user_id,
+    reviewerName:user.full_name,
+    reviewedAt:now,
+    previousValidation:String(submission.validation_status || '')
+  };
+  var payload = {verified:verified, review:review, manual:manual, ai:ai, comparison:snap.comparison||{}, engine:'VISUAL_REVIEW_V7'};
+
+  updateRow_(ss, 'Submissions', 'submission_id', submission.submission_id, {
+    submission_status:'VALIDATED', validation_status:'VALIDATED', version:version
+  });
+  appendObject_(ss, 'SubmissionVersions', {
+    submission_id:submission.submission_id, version:version, payload_snapshot:JSON.stringify(payload), changed_by:user.user_id,
+    changed_at:now, reason:'VISUAL_AUDIT_REVIEW'
+  });
+  appendObject_(ss, 'ValidationResults', {
+    validation_id:'VAL-' + Utilities.getUuid(), submission_id:submission.submission_id, rule_id:'VISUAL_REVIEW', severity:'INFO', status:'VALIDATED',
+    expected_value:'Reviewed final visual metric', actual_value:verified.source + ' SOS=' + verified.sos,
+    message:review.reason, validated_at:now
+  });
+  audit_(ss, user.user_id, 'VISUAL_REVIEW_' + decision, 'VISUAL_AUDIT', submission.submission_id,
+    JSON.stringify({manual:manual, ai:ai, comparison:snap.comparison||{}}), JSON.stringify({verified:verified, review:review}), 'VERCEL');
+  return {ok:true, submissionId:submission.submission_id, verified:verified, review:review, message:'Verified Result tersimpan. Dashboard sekarang menggunakan hasil review sebagai nilai final visual audit.'};
 }
 
 function listQueue_(ss) {
@@ -655,7 +731,29 @@ function analyticsTrendFast_(data){var by={};data.kpi.filter(function(x){return 
 function regionPerformanceFast_(data){var rows=data.kpi.filter(function(x){return x.kpi_id==='ACQUISITION';}),latest='';rows.forEach(function(r){var d=dateKey_(r.date);if(d>latest)latest=d;});return data.regions.map(function(region){var rr=rows.filter(function(x){return String(x.region_id)===String(region.region_id)&&dateKey_(x.date)===latest;}),target=0,actual=0;rr.forEach(function(x){target+=Number(x.target||0);actual+=Number(x.actual||0);});return{region:region.region_name,target:Math.round(target),actual:Math.round(actual),achievement:target?Math.round(actual/target*1000)/10:0};});}
 function todayTasksFast_(data,userId){var today=dateKey_(new Date()),ids={};data.pjps.forEach(function(x){if(String(x.nc_id)===String(userId))ids[String(x.pjp_id)]=true;});var out=[];data.visits.forEach(function(v){if(ids[String(v.pjp_id)]&&dateKey_(v.visit_date)===today){var store=findInArray_(data.stores,'store_id',v.store_id);out.push({visitId:v.pjp_visit_id,storeId:v.store_id,storeName:store?store.store_name:v.store_id,plannedStart:v.planned_start,plannedEnd:v.planned_end,status:v.status,completion:v.status==='COMPLETED'?100:(v.status==='IN_PROGRESS'?65:0)});}});return out;}
 function recentSubmissionsFast_(data,user,limit){var subs=data.submissions.slice();if(user.role_id==='NC')subs=subs.filter(function(x){return String(x.user_id)===String(user.user_id);});subs.sort(function(a,b){return String(b.submitted_at).localeCompare(String(a.submitted_at));});return subs.slice(0,limit).map(function(s){var store=findInArray_(data.stores,'store_id',s.store_id),owner=findInArray_(data.users,'user_id',s.user_id);return{submissionId:s.submission_id,time:s.submitted_at,nc:owner?owner.full_name:s.user_id,store:store?store.store_name:s.store_id,task:taskName_(s.task_id),status:s.validation_status};});}
-function visualAuditRowsFast_(data,limit){var ids={};data.submissions.forEach(function(s){if(s.task_id==='TASK-SOS')ids[s.submission_id]=s;});var out=[];data.versions.forEach(function(v){if(ids[v.submission_id]&&String(v.reason)==='AI_VISUAL_AUDIT'){try{var p=JSON.parse(String(v.payload_snapshot||'{}'));var ev=p.evidence||{};out.push({submissionId:v.submission_id,changedAt:v.changed_at,manual:p.manual||{},ai:p.ai||{},comparison:p.comparison||{},evidence:{available:Boolean(ev.originalFileId||ev.annotatedFileId),originalStored:Boolean(ev.originalFileId),annotatedStored:Boolean(ev.annotatedFileId),captureSource:(p.capture&&p.capture.source)||''}});}catch(ignore){}}});out.sort(function(a,b){return String(b.changedAt).localeCompare(String(a.changedAt));});return out.slice(0,limit);}
+function visualAuditRowsFast_(data,limit){
+  var ids={}, reviews={};
+  data.submissions.forEach(function(s){ if(String(s.task_id)==='TASK-SOS') ids[String(s.submission_id)] = s; });
+  data.versions.forEach(function(v){
+    if (!ids[String(v.submission_id)] || String(v.reason)!=='VISUAL_AUDIT_REVIEW') return;
+    try {
+      var p=JSON.parse(String(v.payload_snapshot||'{}')), key=String(v.submission_id), current=reviews[key];
+      if (!current || Number(v.version||0) > Number(current.version||0)) reviews[key]={version:Number(v.version||0), payload:p};
+    } catch(ignore) {}
+  });
+  var out=[];
+  data.versions.forEach(function(v){
+    var sid=String(v.submission_id), sub=ids[sid];
+    if(!sub || String(v.reason)!=='AI_VISUAL_AUDIT') return;
+    try{
+      var p=JSON.parse(String(v.payload_snapshot||'{}')), ev=p.evidence||{}, rv=reviews[sid]&&reviews[sid].payload||null;
+      var store=findInArray_(data.stores,'store_id',sub.store_id), owner=findInArray_(data.users,'user_id',sub.user_id);
+      out.push({submissionId:sid,changedAt:v.changed_at,nc:owner?owner.full_name:sub.user_id,store:store?store.store_name:sub.store_id,manual:p.manual||{},ai:p.ai||{},comparison:p.comparison||{},verified:rv?(rv.verified||null):null,review:rv?(rv.review||null):null,evidence:{available:Boolean(ev.originalFileId||ev.annotatedFileId),originalStored:Boolean(ev.originalFileId),annotatedStored:Boolean(ev.annotatedFileId),captureSource:(p.capture&&p.capture.source)||''}});
+    }catch(ignore){}
+  });
+  out.sort(function(a,b){return String(b.changedAt).localeCompare(String(a.changedAt));});
+  return out.slice(0,limit);
+}
 
 function analyticsStats_(ss) {
   var users = getRows_(ss, 'Users');
@@ -774,7 +872,7 @@ function seedReferenceData_(ss) {
   ]);
 
   seedIfEmpty_(ss, 'Users', [
-    {user_id:'USR-NC001',employee_code:'NC001',full_name:'Mimo Rahma',role_id:'NC',phone:'081200000001',email:'mimo@example.com',status:'ACTIVE',pin:'1234'},
+    {user_id:'USR-NC001',employee_code:'NC001',full_name:'Mimo',role_id:'NC',phone:'081200000001',email:'mimo@example.com',status:'ACTIVE',pin:'1234'},
     {user_id:'USR-NC002',employee_code:'NC002',full_name:'Sari Putri',role_id:'NC',phone:'081200000002',email:'sari@example.com',status:'ACTIVE',pin:'1234'},
     {user_id:'USR-NC003',employee_code:'NC003',full_name:'Dinda Ayu',role_id:'NC',phone:'081200000003',email:'dinda@example.com',status:'ACTIVE',pin:'1234'},
     {user_id:'USR-NC004',employee_code:'NC004',full_name:'Rani Dewi',role_id:'NC',phone:'081200000004',email:'rani@example.com',status:'ACTIVE',pin:'1234'},
