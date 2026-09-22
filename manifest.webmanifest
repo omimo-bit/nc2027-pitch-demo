@@ -1,9 +1,0 @@
-{
-  "name": "NC 2027 Field Performance Management System",
-  "short_name": "NC 2027",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#f4f7fb",
-  "theme_color": "#0b5cab",
-  "description": "NC 2027 field execution and analytics demo"
-}
