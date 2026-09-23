@@ -1,5 +1,5 @@
-const CACHE = 'nc2027-v7-static';
-const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/ai-vision.js', '/manifest.webmanifest'];
+const CACHE = 'nc2027-v7-branding-v1';
+const ASSETS = ['/', '/index.html', '/styles.css', '/app.js', '/ai-vision.js', '/manifest.webmanifest', '/assets/mead-johnson-logo.svg', '/assets/mead-johnson-logo.png', '/assets/favicon-32.png', '/assets/apple-touch-icon.png', '/assets/icon-192.png', '/assets/icon-512.png', '/assets/icon-512-maskable.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
