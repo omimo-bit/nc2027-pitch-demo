@@ -50,3 +50,14 @@ body{min-height:100vh}.toast{position:fixed;z-index:1000;right:20px;top:20px;max
 .review-workspace-modal{max-height:92vh}
 @media(max-width:980px){.metric-compare.five{grid-template-columns:repeat(3,1fr)}.review-action-grid{grid-template-columns:1fr 1fr}.override-grid{grid-template-columns:1fr 1fr}.override-grid .calc-field{grid-column:1/-1}}
 @media(max-width:620px){.metric-compare.five{grid-template-columns:1fr 1fr}.review-title-row{display:block}.review-title-row .status-badge{display:inline-block;margin-top:8px}.override-grid,.review-action-grid{grid-template-columns:1fr}.override-grid .calc-field{grid-column:auto}.review-workspace-modal{padding:14px}.verified-result-card strong{font-size:24px}}
+
+/* Branding update: supplied Mead Johnson Nutrition artwork */
+.brand-plate{display:inline-flex;align-items:center;width:max-content;max-width:270px;padding:10px 14px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.10)}
+.brand-plate img{display:block;width:min(235px,100%);height:auto}
+.login-brandline{gap:8px}
+.brand-logo-main{display:block;width:min(260px,78%);height:auto;max-height:74px;object-fit:contain;object-position:left center}
+.sidebar-brand{gap:8px}
+.sidebar-logo-plate{display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;padding:8px 9px;min-height:54px}
+.sidebar-logo-plate img{display:block;width:100%;max-width:175px;height:auto}
+.sidebar-brand>span{padding-left:2px}
+@media(max-width:520px){.brand-logo-main{width:min(230px,82%)}.login-brandline{margin-bottom:22px}}
